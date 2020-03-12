@@ -15,15 +15,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-'use strict';
+"use strict";
 
-import extend from './extend';
-import dis from './dispatcher';
-import {MatrixClientPeg} from './MatrixClientPeg';
-import * as sdk from './index';
-import { _t } from './languageHandler';
-import Modal from './Modal';
-import RoomViewStore from './stores/RoomViewStore';
+import extend from "./extend";
+import dis from "./dispatcher";
+import { MatrixClientPeg } from "./MatrixClientPeg";
+import * as sdk from "./index";
+import { _t } from "./languageHandler";
+import Modal from "./Modal";
+import RoomViewStore from "./stores/RoomViewStore";
 import encrypt from "browser-encrypt-attachment";
 import extractPngChunks from "png-chunks-extract";
 
@@ -58,7 +58,7 @@ export class UploadCanceledError extends Error {}
  *  and a thumbnail key.
  */
 function createThumbnail(element, inputWidth, inputHeight, mimeType) {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
         let targetWidth = inputWidth;
         let targetHeight = inputHeight;
         if (targetHeight > MAX_HEIGHT) {
@@ -73,7 +73,9 @@ function createThumbnail(element, inputWidth, inputHeight, mimeType) {
         const canvas = document.createElement("canvas");
         canvas.width = targetWidth;
         canvas.height = targetHeight;
-        canvas.getContext("2d").drawImage(element, 0, 0, targetWidth, targetHeight);
+        canvas
+            .getContext("2d")
+            .drawImage(element, 0, 0, targetWidth, targetHeight);
         canvas.toBlob(function(thumbnail) {
             resolve({
                 info: {
@@ -81,12 +83,12 @@ function createThumbnail(element, inputWidth, inputHeight, mimeType) {
                         w: targetWidth,
                         h: targetHeight,
                         mimetype: thumbnail.type,
-                        size: thumbnail.size,
+                        size: thumbnail.size
                     },
                     w: inputWidth,
-                    h: inputHeight,
+                    h: inputHeight
                 },
-                thumbnail: thumbnail,
+                thumbnail: thumbnail
             });
         }, mimeType);
     });
@@ -126,9 +128,11 @@ async function loadImageElement(imageFile) {
             const buffer = new Uint8Array(arrayBuffer);
             const chunks = extractPngChunks(buffer);
             for (const chunk of chunks) {
-                if (chunk.name === 'pHYs') {
+                if (chunk.name === "pHYs") {
                     if (chunk.data.byteLength !== PHYS_HIDPI.length) return;
-                    const hidpi = chunk.data.every((val, i) => val === PHYS_HIDPI[i]);
+                    const hidpi = chunk.data.every(
+                        (val, i) => val === PHYS_HIDPI[i]
+                    );
                     return hidpi;
                 }
             }
@@ -137,9 +141,9 @@ async function loadImageElement(imageFile) {
     }
 
     const [hidpi] = await Promise.all([parsePromise, imgPromise]);
-    const width = hidpi ? (img.width >> 1) : img.width;
-    const height = hidpi ? (img.height >> 1) : img.height;
-    return {width, height, img};
+    const width = hidpi ? img.width >> 1 : img.width;
+    const height = hidpi ? img.height >> 1 : img.height;
+    return { width, height, img };
 }
 
 /**
@@ -157,16 +161,19 @@ function infoForImageFile(matrixClient, roomId, imageFile) {
     }
 
     let imageInfo;
-    return loadImageElement(imageFile).then(function(r) {
-        return createThumbnail(r.img, r.width, r.height, thumbnailType);
-    }).then(function(result) {
-        imageInfo = result.info;
-        return uploadFile(matrixClient, roomId, result.thumbnail);
-    }).then(function(result) {
-        imageInfo.thumbnail_url = result.url;
-        imageInfo.thumbnail_file = result.file;
-        return imageInfo;
-    });
+    return loadImageElement(imageFile)
+        .then(function(r) {
+            return createThumbnail(r.img, r.width, r.height, thumbnailType);
+        })
+        .then(function(result) {
+            imageInfo = result.info;
+            return uploadFile(matrixClient, roomId, result.thumbnail);
+        })
+        .then(function(result) {
+            imageInfo.thumbnail_url = result.url;
+            imageInfo.thumbnail_file = result.file;
+            return imageInfo;
+        });
 }
 
 /**
@@ -213,16 +220,24 @@ function infoForVideoFile(matrixClient, roomId, videoFile) {
     const thumbnailType = "image/jpeg";
 
     let videoInfo;
-    return loadVideoElement(videoFile).then(function(video) {
-        return createThumbnail(video, video.videoWidth, video.videoHeight, thumbnailType);
-    }).then(function(result) {
-        videoInfo = result.info;
-        return uploadFile(matrixClient, roomId, result.thumbnail);
-    }).then(function(result) {
-        videoInfo.thumbnail_url = result.url;
-        videoInfo.thumbnail_file = result.file;
-        return videoInfo;
-    });
+    return loadVideoElement(videoFile)
+        .then(function(video) {
+            return createThumbnail(
+                video,
+                video.videoWidth,
+                video.videoHeight,
+                thumbnailType
+            );
+        })
+        .then(function(result) {
+            videoInfo = result.info;
+            return uploadFile(matrixClient, roomId, result.thumbnail);
+        })
+        .then(function(result) {
+            videoInfo.thumbnail_url = result.url;
+            videoInfo.thumbnail_file = result.file;
+            return videoInfo;
+        });
 }
 
 /**
@@ -264,44 +279,48 @@ function uploadFile(matrixClient, roomId, file, progressHandler) {
         let canceled = false;
         let uploadPromise;
         let encryptInfo;
-        const prom = readFileAsArrayBuffer(file).then(function(data) {
-            if (canceled) throw new UploadCanceledError();
-            // Then encrypt the file.
-            return encrypt.encryptAttachment(data);
-        }).then(function(encryptResult) {
-            if (canceled) throw new UploadCanceledError();
-            // Record the information needed to decrypt the attachment.
-            encryptInfo = encryptResult.info;
-            // Pass the encrypted data as a Blob to the uploader.
-            const blob = new Blob([encryptResult.data]);
-            uploadPromise = matrixClient.uploadContent(blob, {
-                progressHandler: progressHandler,
-                includeFilename: false,
-            });
+        const prom = readFileAsArrayBuffer(file)
+            .then(function(data) {
+                if (canceled) throw new UploadCanceledError();
+                // Then encrypt the file.
+                return encrypt.encryptAttachment(data);
+            })
+            .then(function(encryptResult) {
+                if (canceled) throw new UploadCanceledError();
+                // Record the information needed to decrypt the attachment.
+                encryptInfo = encryptResult.info;
+                // Pass the encrypted data as a Blob to the uploader.
+                const blob = new Blob([encryptResult.data]);
+                uploadPromise = matrixClient.uploadContent(blob, {
+                    progressHandler: progressHandler,
+                    includeFilename: false
+                });
 
-            return uploadPromise;
-        }).then(function(url) {
-            // If the attachment is encrypted then bundle the URL along
-            // with the information needed to decrypt the attachment and
-            // add it under a file key.
-            encryptInfo.url = url;
-            if (file.type) {
-                encryptInfo.mimetype = file.type;
-            }
-            return {"file": encryptInfo};
-        });
+                return uploadPromise;
+            })
+            .then(function(url) {
+                // If the attachment is encrypted then bundle the URL along
+                // with the information needed to decrypt the attachment and
+                // add it under a file key.
+                encryptInfo.url = url;
+                if (file.type) {
+                    encryptInfo.mimetype = file.type;
+                }
+                return { file: encryptInfo };
+            });
         prom.abort = () => {
             canceled = true;
-            if (uploadPromise) MatrixClientPeg.get().cancelUpload(uploadPromise);
+            if (uploadPromise)
+                MatrixClientPeg.get().cancelUpload(uploadPromise);
         };
         return prom;
     } else {
         const basePromise = matrixClient.uploadContent(file, {
-            progressHandler: progressHandler,
+            progressHandler: progressHandler
         });
         const promise1 = basePromise.then(function(url) {
             // If the attachment isn't encrypted then include the URL directly.
-            return {"url": url};
+            return { url: url };
         });
         // XXX: copy over the abort method to the new promise
         promise1.abort = basePromise.abort;
@@ -324,9 +343,11 @@ export default class ContentMessages {
     }
 
     _isFileSizeAcceptable(file) {
-        if (this._mediaConfig !== null &&
+        if (
+            this._mediaConfig !== null &&
             this._mediaConfig["m.upload.size"] !== undefined &&
-            file.size > this._mediaConfig["m.upload.size"]) {
+            file.size > this._mediaConfig["m.upload.size"]
+        ) {
             return false;
         }
         return true;
@@ -336,27 +357,41 @@ export default class ContentMessages {
         if (this._mediaConfig !== null) return;
 
         console.log("[Media Config] Fetching");
-        return MatrixClientPeg.get().getMediaConfig().then((config) => {
-            console.log("[Media Config] Fetched config:", config);
-            return config;
-        }).catch(() => {
-            // Media repo can't or won't report limits, so provide an empty object (no limits).
-            console.log("[Media Config] Could not fetch config, so not limiting uploads.");
-            return {};
-        }).then((config) => {
-            this._mediaConfig = config;
-        });
+        return MatrixClientPeg.get()
+            .getMediaConfig()
+            .then(config => {
+                console.log("[Media Config] Fetched config:", config);
+                return config;
+            })
+            .catch(() => {
+                // Media repo can't or won't report limits, so provide an empty object (no limits).
+                console.log(
+                    "[Media Config] Could not fetch config, so not limiting uploads."
+                );
+                return {};
+            })
+            .then(config => {
+                this._mediaConfig = config;
+            });
     }
 
     sendStickerContentToRoom(url, roomId, info, text, matrixClient) {
-        return MatrixClientPeg.get().sendStickerMessage(roomId, url, info, text).catch((e) => {
-            console.warn(`Failed to send content with URL ${url} to room ${roomId}`, e);
-            throw e;
-        });
+        return MatrixClientPeg.get()
+            .sendStickerMessage(roomId, url, info, text)
+            .catch(e => {
+                console.warn(
+                    `Failed to send content with URL ${url} to room ${roomId}`,
+                    e
+                );
+                throw e;
+            });
     }
 
     getUploadLimit() {
-        if (this._mediaConfig !== null && this._mediaConfig["m.upload.size"] !== undefined) {
+        if (
+            this._mediaConfig !== null &&
+            this._mediaConfig["m.upload.size"] !== undefined
+        ) {
             return this._mediaConfig["m.upload.size"];
         } else {
             return null;
@@ -365,28 +400,35 @@ export default class ContentMessages {
 
     async sendContentListToRoom(files, roomId, matrixClient) {
         if (matrixClient.isGuest()) {
-            dis.dispatch({action: 'require_registration'});
+            dis.dispatch({ action: "require_registration" });
             return;
         }
 
         const isQuoting = Boolean(RoomViewStore.getQuotingEvent());
         if (isQuoting) {
             const QuestionDialog = sdk.getComponent("dialogs.QuestionDialog");
-            const shouldUpload = await new Promise((resolve) => {
-                Modal.createTrackedDialog('Upload Reply Warning', '', QuestionDialog, {
-                    title: _t('Replying With Files'),
-                    description: (
-                        <div>{_t(
-                            'At this time it is not possible to reply with a file. ' +
-                            'Would you like to upload this file without replying?',
-                        )}</div>
-                    ),
-                    hasCancelButton: true,
-                    button: _t("Continue"),
-                    onFinished: (shouldUpload) => {
-                        resolve(shouldUpload);
-                    },
-                });
+            const shouldUpload = await new Promise(resolve => {
+                Modal.createTrackedDialog(
+                    "Upload Reply Warning",
+                    "",
+                    QuestionDialog,
+                    {
+                        title: _t("Replying With Files"),
+                        description: (
+                            <div>
+                                {_t(
+                                    "At this time it is not possible to reply with a file. " +
+                                        "Would you like to upload this file without replying?"
+                                )}
+                            </div>
+                        ),
+                        hasCancelButton: true,
+                        button: _t("Continue"),
+                        onFinished: shouldUpload => {
+                            resolve(shouldUpload);
+                        }
+                    }
+                );
             });
             if (!shouldUpload) return;
         }
@@ -405,22 +447,31 @@ export default class ContentMessages {
         }
 
         if (tooBigFiles.length > 0) {
-            const UploadFailureDialog = sdk.getComponent("dialogs.UploadFailureDialog");
-            const uploadFailureDialogPromise = new Promise((resolve) => {
-                Modal.createTrackedDialog('Upload Failure', '', UploadFailureDialog, {
-                    badFiles: tooBigFiles,
-                    totalFiles: files.length,
-                    contentMessages: this,
-                    onFinished: (shouldContinue) => {
-                        resolve(shouldContinue);
-                    },
-                });
+            const UploadFailureDialog = sdk.getComponent(
+                "dialogs.UploadFailureDialog"
+            );
+            const uploadFailureDialogPromise = new Promise(resolve => {
+                Modal.createTrackedDialog(
+                    "Upload Failure",
+                    "",
+                    UploadFailureDialog,
+                    {
+                        badFiles: tooBigFiles,
+                        totalFiles: files.length,
+                        contentMessages: this,
+                        onFinished: shouldContinue => {
+                            resolve(shouldContinue);
+                        }
+                    }
+                );
             });
             const shouldContinue = await uploadFailureDialogPromise;
             if (!shouldContinue) return;
         }
 
-        const UploadConfirmDialog = sdk.getComponent("dialogs.UploadConfirmDialog");
+        const UploadConfirmDialog = sdk.getComponent(
+            "dialogs.UploadConfirmDialog"
+        );
         let uploadAll = false;
         // Promise to complete before sending next file into room, used for synchronisation of file-sending
         // to match the order the files were specified in
@@ -428,31 +479,77 @@ export default class ContentMessages {
         for (let i = 0; i < okFiles.length; ++i) {
             const file = okFiles[i];
             if (!uploadAll) {
-                const shouldContinue = await new Promise((resolve) => {
-                    Modal.createTrackedDialog('Upload Files confirmation', '', UploadConfirmDialog, {
-                        file,
-                        currentIndex: i,
-                        totalFiles: okFiles.length,
-                        onFinished: (shouldContinue, shouldUploadAll) => {
-                            if (shouldUploadAll) {
-                                uploadAll = true;
+                const shouldContinue = await new Promise(resolve => {
+                    Modal.createTrackedDialog(
+                        "Upload Files confirmation",
+                        "",
+                        UploadConfirmDialog,
+                        {
+                            file,
+                            currentIndex: i,
+                            totalFiles: okFiles.length,
+                            onFinished: (shouldContinue, shouldUploadAll) => {
+                                if (shouldUploadAll) {
+                                    uploadAll = true;
+                                }
+                                resolve(shouldContinue);
                             }
-                            resolve(shouldContinue);
-                        },
-                    });
+                        }
+                    );
                 });
                 if (!shouldContinue) break;
             }
-            promBefore = this._sendContentToRoom(file, roomId, matrixClient, promBefore);
+            promBefore = this._sendContentToRoom(
+                file,
+                roomId,
+                matrixClient,
+                promBefore
+            );
         }
+    }
+
+    getFileContent(file, matrixClient, roomId) {
+        const content = {
+            body: file.name || "Attachment",
+            info: {
+                size: file.size
+            }
+        };
+        if (file.type.indexOf("image/") == 0) {
+            content.msgtype = "m.image";
+            infoForImageFile(matrixClient, roomId, file).then(
+                imageInfo => {
+                    extend(content.info, imageInfo);
+                },
+                error => {
+                    console.error(error);
+                    content.msgtype = "m.file";
+                }
+            );
+        } else if (file.type.indexOf("audio/") == 0) {
+            content.msgtype = "m.audio";
+        } else if (file.type.indexOf("video/") == 0) {
+            content.msgtype = "m.video";
+            infoForVideoFile(matrixClient, roomId, file).then(
+                videoInfo => {
+                    extend(content.info, videoInfo);
+                },
+                error => {
+                    content.msgtype = "m.file";
+                }
+            );
+        } else {
+            content.msgtype = "m.file";
+        }
+        return content;
     }
 
     _sendContentToRoom(file, roomId, matrixClient, promBefore) {
         const content = {
-            body: file.name || 'Attachment',
+            body: file.name || "Attachment",
             info: {
-                size: file.size,
-            },
+                size: file.size
+            }
         };
 
         // if we have a mime type for the file, add it to the message metadata
@@ -460,109 +557,136 @@ export default class ContentMessages {
             content.info.mimetype = file.type;
         }
 
-        const prom = new Promise((resolve) => {
-            if (file.type.indexOf('image/') == 0) {
-                content.msgtype = 'm.image';
-                infoForImageFile(matrixClient, roomId, file).then((imageInfo)=>{
-                    extend(content.info, imageInfo);
-                    resolve();
-                }, (error)=>{
-                    console.error(error);
-                    content.msgtype = 'm.file';
-                    resolve();
-                });
-            } else if (file.type.indexOf('audio/') == 0) {
-                content.msgtype = 'm.audio';
+        const prom = new Promise(resolve => {
+            if (file.type.indexOf("image/") == 0) {
+                content.msgtype = "m.image";
+                infoForImageFile(matrixClient, roomId, file).then(
+                    imageInfo => {
+                        extend(content.info, imageInfo);
+                        resolve();
+                    },
+                    error => {
+                        console.error(error);
+                        content.msgtype = "m.file";
+                        resolve();
+                    }
+                );
+            } else if (file.type.indexOf("audio/") == 0) {
+                content.msgtype = "m.audio";
                 resolve();
-            } else if (file.type.indexOf('video/') == 0) {
-                content.msgtype = 'm.video';
-                infoForVideoFile(matrixClient, roomId, file).then((videoInfo)=>{
-                    extend(content.info, videoInfo);
-                    resolve();
-                }, (error)=>{
-                    content.msgtype = 'm.file';
-                    resolve();
-                });
+            } else if (file.type.indexOf("video/") == 0) {
+                content.msgtype = "m.video";
+                infoForVideoFile(matrixClient, roomId, file).then(
+                    videoInfo => {
+                        extend(content.info, videoInfo);
+                        resolve();
+                    },
+                    error => {
+                        content.msgtype = "m.file";
+                        resolve();
+                    }
+                );
             } else {
-                content.msgtype = 'm.file';
+                content.msgtype = "m.file";
                 resolve();
             }
         });
 
         const upload = {
-            fileName: file.name || 'Attachment',
+            fileName: file.name || "Attachment",
             roomId: roomId,
             total: 0,
-            loaded: 0,
+            loaded: 0
         };
         this.inprogress.push(upload);
-        dis.dispatch({action: 'upload_started'});
+        dis.dispatch({ action: "upload_started" });
 
         // Focus the composer view
-        dis.dispatch({action: 'focus_composer'});
+        dis.dispatch({ action: "focus_composer" });
 
         let error;
 
         function onProgress(ev) {
             upload.total = ev.total;
             upload.loaded = ev.loaded;
-            dis.dispatch({action: 'upload_progress', upload: upload});
+            dis.dispatch({ action: "upload_progress", upload: upload });
         }
 
-        return prom.then(function() {
-            // XXX: upload.promise must be the promise that
-            // is returned by uploadFile as it has an abort()
-            // method hacked onto it.
-            upload.promise = uploadFile(
-                matrixClient, roomId, file, onProgress,
-            );
-            return upload.promise.then(function(result) {
-                content.file = result.file;
-                content.url = result.url;
-            });
-        }).then((url) => {
-            // Await previous message being sent into the room
-            return promBefore;
-        }).then(function() {
-            return matrixClient.sendMessage(roomId, content);
-        }, function(err) {
-            error = err;
-            if (!upload.canceled) {
-                let desc = _t("The file '%(fileName)s' failed to upload.", {fileName: upload.fileName});
-                if (err.http_status == 413) {
-                    desc = _t(
-                        "The file '%(fileName)s' exceeds this homeserver's size limit for uploads",
-                        {fileName: upload.fileName},
-                    );
-                }
-                const ErrorDialog = sdk.getComponent("dialogs.ErrorDialog");
-                Modal.createTrackedDialog('Upload failed', '', ErrorDialog, {
-                    title: _t('Upload Failed'),
-                    description: desc,
+        return prom
+            .then(function() {
+                // XXX: upload.promise must be the promise that
+                // is returned by uploadFile as it has an abort()
+                // method hacked onto it.
+                upload.promise = uploadFile(
+                    matrixClient,
+                    roomId,
+                    file,
+                    onProgress
+                );
+                return upload.promise.then(function(result) {
+                    content.file = result.file;
+                    content.url = result.url;
                 });
-            }
-        }).finally(() => {
-            const inprogressKeys = Object.keys(this.inprogress);
-            for (let i = 0; i < this.inprogress.length; ++i) {
-                const k = inprogressKeys[i];
-                if (this.inprogress[k].promise === upload.promise) {
-                    this.inprogress.splice(k, 1);
-                    break;
+            })
+            .then(url => {
+                // Await previous message being sent into the room
+                return promBefore;
+            })
+            .then(
+                function() {
+                    console.log(content);
+                    return matrixClient.sendMessage(roomId, content);
+                },
+                function(err) {
+                    error = err;
+                    if (!upload.canceled) {
+                        let desc = _t(
+                            "The file '%(fileName)s' failed to upload.",
+                            { fileName: upload.fileName }
+                        );
+                        if (err.http_status == 413) {
+                            desc = _t(
+                                "The file '%(fileName)s' exceeds this homeserver's size limit for uploads",
+                                { fileName: upload.fileName }
+                            );
+                        }
+                        const ErrorDialog = sdk.getComponent(
+                            "dialogs.ErrorDialog"
+                        );
+                        Modal.createTrackedDialog(
+                            "Upload failed",
+                            "",
+                            ErrorDialog,
+                            {
+                                title: _t("Upload Failed"),
+                                description: desc
+                            }
+                        );
+                    }
                 }
-            }
-            if (error) {
-                // 413: File was too big or upset the server in some way:
-                // clear the media size limit so we fetch it again next time
-                // we try to upload
-                if (error && error.http_status === 413) {
-                    this._mediaConfig = null;
+            )
+            .finally(() => {
+                const inprogressKeys = Object.keys(this.inprogress);
+                for (let i = 0; i < this.inprogress.length; ++i) {
+                    const k = inprogressKeys[i];
+                    if (this.inprogress[k].promise === upload.promise) {
+                        this.inprogress.splice(k, 1);
+                        break;
+                    }
                 }
-                dis.dispatch({action: 'upload_failed', upload, error});
-            } else {
-                dis.dispatch({action: 'upload_finished', upload});
-                dis.dispatch({action: 'message_sent'});
-            }
-        });
+                if (error) {
+                    // 413: File was too big or upset the server in some way:
+                    // clear the media size limit so we fetch it again next time
+                    // we try to upload
+                    if (error && error.http_status === 413) {
+                        this._mediaConfig = null;
+                    }
+                    dis.dispatch({ action: "upload_failed", upload, error });
+                } else {
+                    dis.dispatch({ action: "upload_finished", upload });
+                    dis.dispatch({ action: "message_sent" });
+                }
+            });
     }
 
     getCurrentUploads() {
@@ -582,7 +706,7 @@ export default class ContentMessages {
         if (upload) {
             upload.canceled = true;
             MatrixClientPeg.get().cancelUpload(upload.promise);
-            dis.dispatch({action: 'upload_canceled', upload});
+            dis.dispatch({ action: "upload_canceled", upload });
         }
     }
 }

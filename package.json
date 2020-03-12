@@ -63,6 +63,7 @@
     "@uppy/onedrive": "^1.0.2",
     "@uppy/react": "^1.4.6",
     "@uppy/transloadit": "^1.5.2",
+    "@uppy/xhr-upload": "^1.5.2",
     "blueimp-canvas-to-blob": "^3.5.0",
     "browser-encrypt-attachment": "^0.3.0",
     "browser-request": "^0.3.3",

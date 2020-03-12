@@ -17,6 +17,7 @@ limitations under the License.
 import React, { createRef } from "react";
 import PropTypes from "prop-types";
 import Uppy from "@uppy/core";
+import XHRUpload from "@uppy/xhr-upload";
 import Dropbox from "@uppy/dropbox";
 import GoogleDrive from "@uppy/google-drive";
 import Facebook from "@uppy/facebook";
@@ -150,8 +151,17 @@ class UploadButton extends React.Component {
             restrictions: {
                 maxFileSize: 1000000,
                 // maxNumberOfFiles: 3,
-                minNumberOfFiles: 1,
-                allowedFileTypes: ["image/*", "video/*"]
+                minNumberOfFiles: 1
+                // allowedFileTypes: ["image/*", "video/*"]
+            }
+        });
+        this.uppy.use(XHRUpload, {
+            endpoint:
+                "https://matrix-client.matrix.org/_matrix/media/r0/upload",
+            headers: {
+                authorization: `Bearer ${localStorage.getItem(
+                    "mx_access_token"
+                )}`
             }
         });
 
@@ -168,6 +178,22 @@ class UploadButton extends React.Component {
             const { id, fileIDs } = data;
             console.log(`Starting upload ${id} for files ${fileIDs}`);
         });
+
+        this.uppy.on("complete", result => {
+            for (let i = 0; i < result.successful.length; i += 1) {
+                const res = result.successful[i];
+                const content = ContentMessages.sharedInstance().getFileContent(
+                    res.data,
+                    MatrixClientPeg.get(),
+                    this.props.roomId
+                );
+                content.url = res.response.body.content_uri;
+                content.info.mimetype = res.type;
+                console.log(content);
+                MatrixClientPeg.get().sendMessage(this.props.roomId, content);
+            }
+        });
+
         this.state = {
             modalOpen: false,
             isUpdated: false

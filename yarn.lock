@@ -1468,6 +1468,15 @@
   dependencies:
     lodash.throttle "^4.1.1"
 
+"@uppy/xhr-upload@^1.5.2":
+  version "1.5.2"
+  resolved "https://registry.yarnpkg.com/@uppy/xhr-upload/-/xhr-upload-1.5.2.tgz#66feedf3e231b00b182df8c4ff45d9a4bf487845"
+  integrity sha512-2K3V2y5zdCnUvs1e2YBRlApxGFE3x3eSLN4yAM5xJu8ZjSQy4bgq50JdiaNTPBKSrZccD764Q1qEisqSCa6y6A==
+  dependencies:
+    "@uppy/companion-client" "^1.4.2"
+    "@uppy/utils" "^2.2.2"
+    cuid "^2.1.1"
+
 "@webassemblyjs/ast@1.8.5":
   version "1.8.5"
   resolved "https://registry.yarnpkg.com/@webassemblyjs/ast/-/ast-1.8.5.tgz#51b1c5fe6576a34953bf4b253df9f0d490d9e359"
